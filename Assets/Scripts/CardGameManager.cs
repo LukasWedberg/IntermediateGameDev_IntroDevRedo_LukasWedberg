@@ -44,6 +44,28 @@ public class CardGameManager : MonoBehaviour
     static public GameObject playerChosenCard;
     public GameObject opponentChosenCard;
 
+
+    float cardDealTime = .3f;
+    float cardDealTimer = 0;
+
+
+    float flipCardTime = .1f;
+    float flipCardTimer = 0;
+
+    float opponentSelectTime = 1f;
+    float opponentSelectTimer = 0;
+
+    float resolveSuspenseTime = 2f;
+    float resolveSuspenseTimer = 0f;
+
+    float postOutcomeRevealTime = 1f;
+    float postOutcomeRevealTimer = 0f;
+
+
+    float reshuffleIncrementTime = .05f; 
+    float reshuffleIncrementTimer = 0f; 
+
+
     void Start() {
         state = GameState.SETUP;
     }
@@ -60,46 +82,86 @@ public class CardGameManager : MonoBehaviour
 
                 break;
             case GameState.OPPONENTDEAL:
-                if (opponentHand.Count < playerHandCount)
+
+                if (cardDealTimer < cardDealTime)
                 {
-                    DealOpponentCard();
+                    cardDealTimer += Time.deltaTime;
                 }
                 else
                 {
-                    state = GameState.DEAL;
+                    cardDealTimer = 0;
+
+                    DealOpponentCard();
+
+                    if (opponentHand.Count == playerHandCount)
+                    {
+                        state = GameState.DEAL;
+                    }
+                    
+                        
+
                 }
 
                 break;
             case GameState.DEAL:
-                if (playerHand.Count < playerHandCount)
+                if (cardDealTimer < cardDealTime)
                 {
-                    DealCard();
+                    cardDealTimer += Time.deltaTime;
                 }
-                else{
-                    state = GameState.PLAYERCARDFLIP;
+                else
+                {
+                    cardDealTimer = 0;
+                    DealCard();
+
+                    if (playerHand.Count == playerHandCount)
+                    {
+                        state = GameState.PLAYERCARDFLIP;
+                    }
+
                 }
                 break;
             case GameState.PLAYERCARDFLIP:
-                for (int i = 0; i < playerHandCount; i++)
-                {
-                    playerHand[i].GetComponent<Card>().flipped = true; 
-                }
 
-                state = GameState.OPPONENTCHOOSE;
+                if (flipCardTimer < flipCardTime)
+                {
+                    flipCardTimer += Time.deltaTime;
+                }
+                else
+                {
+                    flipCardTimer = 0;
+                    for (int i = 0; i < playerHandCount; i++)
+                    {
+                        playerHand[i].GetComponent<Card>().flipped = true;
+                    }
+
+                    state = GameState.OPPONENTCHOOSE;
+                }
 
                 break;
 
             case GameState.OPPONENTCHOOSE:
 
-                int randomIndex = Random.Range(0, 3);
+                if (opponentSelectTimer < opponentSelectTime)
+                {
+                    opponentSelectTimer += Time.deltaTime;
+                }
+                else
+                {
+                    opponentSelectTimer = 0;
 
-                GameObject randomOpposingCard = opponentHand[randomIndex];
+                    int randomIndex = Random.Range(0, 3);
 
-                randomOpposingCard.transform.position -= new Vector3(0, 1, 0);
+                    GameObject randomOpposingCard = opponentHand[randomIndex];
 
-                opponentChosenCard = randomOpposingCard;
+                    //randomOpposingCard.transform.position -= new Vector3(0, 1, 0);
 
-                state = GameState.CHOOSE;
+                    randomOpposingCard.GetComponent<Card>().positionWeLerpTo = randomOpposingCard.transform.position - new Vector3(0, 1, 0);
+
+                    opponentChosenCard = randomOpposingCard;
+
+                    state = GameState.CHOOSE;
+
+                }
 
                 break;
 
@@ -107,154 +169,207 @@ public class CardGameManager : MonoBehaviour
                 break;
             case GameState.RESOLVE:
 
-                Sprite playerCardSprite = playerChosenCard.GetComponent<SpriteRenderer>().sprite;
-
-                Sprite opponentCardSprite = opponentChosenCard.GetComponent<Card>().faceSprite;
-
-                opponentChosenCard.GetComponent<Card>().flipped = true;
-
-                RoundOutcome outcome = RoundOutcome.DRAW;
-                
-
-                //Now we have to evaluate each different scenario! We'll start by seeing what happens when the player picks rock.
-                if (playerCardSprite == cardFaces[0])
+                if (resolveSuspenseTimer < resolveSuspenseTime)
                 {
-                    Debug.Log("THE PLAYER CHOSE ROCK!");
+                    resolveSuspenseTimer += Time.deltaTime;
+                }
+                else if (opponentChosenCard.GetComponent<Card>().flipped != true){
 
-                    if (opponentCardSprite == cardFaces[1])
+                    opponentChosenCard.GetComponent<Card>().flipped = true;
+
+                }else if (postOutcomeRevealTimer < postOutcomeRevealTime)
+                {
+                    postOutcomeRevealTimer += Time.deltaTime;
+                }else
+                {
+                    postOutcomeRevealTimer = 0;
+                    resolveSuspenseTimer = 0;
+
+                    Sprite playerCardSprite = playerChosenCard.GetComponent<SpriteRenderer>().sprite;
+
+                    Sprite opponentCardSprite = opponentChosenCard.GetComponent<Card>().faceSprite;
+
+                    opponentChosenCard.GetComponent<Card>().flipped = true;
+
+                    RoundOutcome outcome = RoundOutcome.DRAW;
+
+
+                    //Now we have to evaluate each different scenario! We'll start by seeing what happens when the player picks rock.
+                    if (playerCardSprite == cardFaces[0])
                     {
-                        Debug.Log("OPPONENT CHOSE PAPER");
-                        outcome = RoundOutcome.LOSS;
+                        Debug.Log("THE PLAYER CHOSE ROCK!");
+
+                        if (opponentCardSprite == cardFaces[1])
+                        {
+                            Debug.Log("OPPONENT CHOSE PAPER");
+                            outcome = RoundOutcome.LOSS;
 
 
-                    } else if (opponentCardSprite == cardFaces[2]) {
+                        }
+                        else if (opponentCardSprite == cardFaces[2])
+                        {
 
-                        Debug.Log("OPPONENT CHOSE SCISSORS");
-                        outcome = RoundOutcome.WIN;
+                            Debug.Log("OPPONENT CHOSE SCISSORS");
+                            outcome = RoundOutcome.WIN;
+                        }
+
                     }
 
-                }
-
-                //This time the player picked paper
-                if (playerCardSprite == cardFaces[1])
-                {
-                    Debug.Log("THE PLAYER CHOSE PAPER!");
-
-                    if (opponentCardSprite == cardFaces[2])
+                    //This time the player picked paper
+                    if (playerCardSprite == cardFaces[1])
                     {
-                        Debug.Log("OPPONENT CHOSE SCISSORS");
-                        outcome = RoundOutcome.LOSS;
+                        Debug.Log("THE PLAYER CHOSE PAPER!");
 
+                        if (opponentCardSprite == cardFaces[2])
+                        {
+                            Debug.Log("OPPONENT CHOSE SCISSORS");
+                            outcome = RoundOutcome.LOSS;
+
+
+                        }
+                        else if (opponentCardSprite == cardFaces[0])
+                        {
+
+                            Debug.Log("OPPONENT CHOSE ROCK");
+                            outcome = RoundOutcome.WIN;
+                        }
 
                     }
-                    else if (opponentCardSprite == cardFaces[0])
-                    {
 
-                        Debug.Log("OPPONENT CHOSE ROCK");
-                        outcome = RoundOutcome.WIN;
+                    //This time the player picked scissors!
+                    if (playerCardSprite == cardFaces[2])
+                    {
+                        Debug.Log("THE PLAYER CHOSE SCISSORS!");
+
+                        if (opponentCardSprite == cardFaces[0])
+                        {
+                            Debug.Log("OPPONENT CHOSE ROCK");
+                            outcome = RoundOutcome.LOSS;
+
+
+                        }
+                        else if (opponentCardSprite == cardFaces[1])
+                        {
+
+                            Debug.Log("OPPONENT CHOSE PAPER");
+                            outcome = RoundOutcome.WIN;
+                        }
+
                     }
 
-                }
-
-                //This time the player picked scissors!
-                if (playerCardSprite == cardFaces[2])
-                {
-                    Debug.Log("THE PLAYER CHOSE SCISSORS!");
-
-                    if (opponentCardSprite == cardFaces[0])
+                    if (outcome == RoundOutcome.WIN)
                     {
-                        Debug.Log("OPPONENT CHOSE ROCK");
-                        outcome = RoundOutcome.LOSS;
-
+                        //Play happy noise
+                        //Add player points
 
                     }
-                    else if (opponentCardSprite == cardFaces[1])
+                    else if (outcome == RoundOutcome.LOSS)
+                    {
+                        //Play sad noise
+                        //Add opponent points
+
+                    }
+                    else
                     {
 
-                        Debug.Log("OPPONENT CHOSE PAPER");
-                        outcome = RoundOutcome.WIN;
                     }
 
-                }
-
-                if (outcome == RoundOutcome.WIN)
-                {
-                    //Play happy noise
-                    //Add player points
+                    state = GameState.CLEANUP;
 
                 }
-                else if (outcome == RoundOutcome.LOSS)
-                {
-                    //Play sad noise
-                    //Add opponent points
-
-                }
-                else
-                {
-
-                }
-
-                state = GameState.CLEANUP;
-
-
 
                 break;
             case GameState.CLEANUP:
 
                 //Clean up opponent and player hands
 
-                //Clean up the 2 played cards
-                if (opponentChosenCard != null)
+                if (cardDealTimer < cardDealTime)
                 {
-                    DiscardCard(opponentHand, opponentChosenCard);
-                    opponentChosenCard = null;
-                }
-                else if (playerChosenCard != null)
-                {
-                    DiscardCard(playerHand, playerChosenCard);
-                    playerChosenCard = null;
-                }
-                else if (opponentHand.Count > 0)
-                {
-                    //Clean opponent hand first
-                    DiscardCard(opponentHand, opponentHand[opponentHand.Count - 1]);
+                    cardDealTimer += Time.deltaTime;
 
-                }
-                else if (playerHand.Count > 0)
-                {
-                    //Then we clean player hand;
-                    DiscardCard(playerHand, playerHand[playerHand.Count - 1]);
                 }
                 else {
-                    //By now the playing field should be all ready for another round!
-                    //...Unless there are no more cards to draw from the deck!
-                    //We'll have to check for that too.
+                    cardDealTimer = 0;
 
-                    if (DeckManager.deck.Count > 0)
+                    //Clean up the 2 played cards
+                    if (opponentChosenCard != null)
                     {
-                        state = GameState.OPPONENTDEAL;
+                        DiscardCard(opponentHand, opponentChosenCard);
+                        opponentChosenCard = null;
+                    }
+                    else if (playerChosenCard != null)
+                    {
+                        DiscardCard(playerHand, playerChosenCard);
+                        playerChosenCard = null;
+                    }
+                    else if (opponentHand.Count > 0)
+                    {
+                        //Clean opponent hand first
+                        DiscardCard(opponentHand, opponentHand[opponentHand.Count - 1]);
+
+                    }
+                    else if (playerHand.Count > 0)
+                    {
+                        //Then we clean player hand;
+                        DiscardCard(playerHand, playerHand[playerHand.Count - 1]);
                     }
                     else
                     {
-                        state = GameState.BIGCLEANUP;
+                        //By now the playing field should be all ready for another round!
+                        //...Unless there are no more cards to draw from the deck!
+                        //We'll have to check for that too.
+
+                        if (DeckManager.deck.Count > 0)
+                        {
+                            state = GameState.OPPONENTDEAL;
+                        }
+                        else
+                        {
+                            state = GameState.BIGCLEANUP;
+                        }
+
+
                     }
+
+
 
 
                 }
 
+                break;
+
+            case GameState.BIGCLEANUP:
+
+                if (reshuffleIncrementTimer < reshuffleIncrementTime)
+                {
+                    reshuffleIncrementTimer += Time.deltaTime;
+                }
+                else
+                {
+                    reshuffleIncrementTimer = 0;
+                    if (discardPile.Count > 0)
+                    {
+                        GameObject cardWeReturn = discardPile[discardPile.Count - 1];
+
+                        discardPile.Remove(cardWeReturn);
+
+                        Vector3 newPos =  new Vector3(-discardTransform.position.x, discardTransform.position.y + .02f * DeckManager.deck.Count, 0 - .1f * DeckManager.deck.Count);
+
+                        Card cardComponent = cardWeReturn.GetComponent<Card>();
+
+                        cardComponent.positionWeLerpTo = newPos;
+
+                        cardComponent.flipped = false;
+
+                        DeckManager.deck.Add(cardWeReturn);
 
 
 
 
+                    }
 
 
-
-
-
-
-                
-
-
+                }
 
                 break;
 
@@ -264,8 +379,12 @@ public class CardGameManager : MonoBehaviour
     void DealCard() {        
         GameObject nextCard = DeckManager.deck[DeckManager.deck.Count - 1];
         Vector3 newPos = playerPos.transform.position;
+        
         newPos.x = newPos.x + (2f * playerHand.Count);
-        nextCard.transform.position = newPos;
+
+        nextCard.GetComponent<Card>().positionWeLerpTo = newPos;
+
+        //nextCard.transform.position = newPos;
         playerHand.Add(nextCard);
         DeckManager.deck.Remove(nextCard);
 
@@ -275,7 +394,10 @@ public class CardGameManager : MonoBehaviour
         GameObject nextCard = DeckManager.deck[DeckManager.deck.Count - 1];
         Vector3 newPos = opponentPos.transform.position;
         newPos.x = newPos.x + (2f * opponentHand.Count);
-        nextCard.transform.position = newPos;
+
+        nextCard.GetComponent<Card>().positionWeLerpTo = newPos;
+
+        //nextCard.transform.position = newPos;
         opponentHand.Add(nextCard);
         DeckManager.deck.Remove(nextCard);
     }
@@ -289,14 +411,23 @@ public class CardGameManager : MonoBehaviour
             DeckManager.deck[randomElementTwo] = elementOne;
 
             DeckManager.deck[i].transform.position = new Vector3(-discardTransform.position.x, discardTransform.position.y + .02f * i, 0-.1f * i);
+
+            DeckManager.deck[i].GetComponent<Card>().positionWeLerpTo = DeckManager.deck[i].transform.position;
         }
     
     }
 
     void DiscardCard(List<GameObject> listWeRemoveFrom, GameObject cardWeRemove) {
         listWeRemoveFrom.Remove(cardWeRemove);
-        cardWeRemove.transform.position = discardTransform.position;
-        cardWeRemove.transform.position -= new Vector3(0, -.02f * discardPile.Count, .1f * discardPile.Count);
+        Vector3 newPos = discardTransform.position - new Vector3(0, -.02f * discardPile.Count, .1f * discardPile.Count);
+
+        //cardWeRemove.transform.position = discardTransform.position;
+        //cardWeRemove.transform.position -= new Vector3(0, -.02f * discardPile.Count, .1f * discardPile.Count);
+
+
+        Card cardComponent = cardWeRemove.GetComponent<Card>();
+        cardComponent.positionWeLerpTo = newPos;
+        cardComponent.flipped = true;
 
 
         discardPile.Add(cardWeRemove);

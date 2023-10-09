@@ -15,6 +15,10 @@ public class Card : MonoBehaviour
 
     bool mouseOver = false;
 
+    public Vector3 positionWeLerpTo;
+
+    float lerpSpeed = 18;
+
     void start() {
         //myRenderer = GetComponent<SpriteRenderer>();
         backSprite = myRenderer.sprite;
@@ -27,9 +31,15 @@ public class Card : MonoBehaviour
 
             myRenderer.sprite = faceSprite;
 
-            
+
         }
-    
+        else {
+            myRenderer.sprite = backSprite;
+        }
+        
+        transform.position = Vector3.Lerp(transform.position, positionWeLerpTo, lerpSpeed * Time.deltaTime);
+        
+
     }
 
     void OnMouseDown() {
@@ -63,6 +73,8 @@ public class Card : MonoBehaviour
                 CardGameManager.playerChosenCard = transform.gameObject;
 
                 CardGameManager.state = CardGameManager.GameState.RESOLVE;
+
+                positionWeLerpTo += new Vector3(0, 1, 0);
             }
 
 
