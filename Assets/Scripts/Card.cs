@@ -41,7 +41,7 @@ public class Card : MonoBehaviour
 
         if (mouseOver)
         {
-            transform.position = Vector3.Lerp(transform.position, positionWeLerpTo + new Vector3(0,.1f,0), lerpSpeed * Time.deltaTime);
+            transform.position = Vector3.Lerp(transform.position, positionWeLerpTo + new Vector3(0,.08f,0), lerpSpeed * Time.deltaTime);
         }
         else
         {

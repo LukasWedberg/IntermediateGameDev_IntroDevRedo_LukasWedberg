@@ -61,14 +61,14 @@ public class CardGameManager : MonoBehaviour
     public GameObject opponentChosenCard;
 
 
-    float cardDealTime = .3f;
+    float cardDealTime = .28f;
     float cardDealTimer = 0;
 
 
-    float flipCardTime = .1f;
+    float flipCardTime = .25f;
     float flipCardTimer = 0;
 
-    float opponentSelectTime = 1f;
+    float opponentSelectTime = .5f;
     float opponentSelectTimer = 0;
 
     float resolveSuspenseTime = 2f;
@@ -160,7 +160,7 @@ public class CardGameManager : MonoBehaviour
                     {
                         playerHand[i].GetComponent<Card>().flipped = true;
                     }
-
+                    myAudioSource.PlayOneShot(soundEffects[0]);
                     state = GameState.OPPONENTCHOOSE;
                 }
 
