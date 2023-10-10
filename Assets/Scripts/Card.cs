@@ -18,6 +18,8 @@ public class Card : MonoBehaviour
     public Vector3 positionWeLerpTo;
 
     float lerpSpeed = 18;
+    
+    public AudioClip cardSwoosh;
 
     void start() {
         //myRenderer = GetComponent<SpriteRenderer>();
@@ -36,9 +38,17 @@ public class Card : MonoBehaviour
         else {
             myRenderer.sprite = backSprite;
         }
-        
-        transform.position = Vector3.Lerp(transform.position, positionWeLerpTo, lerpSpeed * Time.deltaTime);
-        
+
+        if (mouseOver)
+        {
+            transform.position = Vector3.Lerp(transform.position, positionWeLerpTo + new Vector3(0,.1f,0), lerpSpeed * Time.deltaTime);
+        }
+        else
+        {
+            transform.position = Vector3.Lerp(transform.position, positionWeLerpTo, lerpSpeed * Time.deltaTime);
+        }
+
+        //mouseOver = false;
 
     }
 
@@ -68,18 +78,53 @@ public class Card : MonoBehaviour
             if (foundCard)
             {
 
-                mouseOver = true;
+                //mouseOver = true;
 
                 CardGameManager.playerChosenCard = transform.gameObject;
 
                 CardGameManager.state = CardGameManager.GameState.RESOLVE;
 
-                positionWeLerpTo += new Vector3(0, 1, 0);
+                CardGameManager.myAudioSource.PlayOneShot(cardSwoosh);
+
+                positionWeLerpTo = new Vector3(0f, transform.position.y + 2.1f, 0);
             }
 
 
         }
     }
 
+    void OnMouseEnter()
+    {
+        if (CardGameManager.state == CardGameManager.GameState.CHOOSE)
+        {
+            bool foundCard = false;
 
+            for (int i = 0; i < CardGameManager.playerHand.Count; i++)
+            {
+                GameObject cardWeCheck = CardGameManager.playerHand[i];
+
+                if (transform.gameObject == cardWeCheck)
+                {
+                    foundCard = true;
+                }
+
+
+
+            }
+
+            if (foundCard)
+            {
+
+                mouseOver = true;
+            }
+
+
+
+        }
+    }
+
+    void OnMouseExit() {
+
+        mouseOver = false;
+    }
 }

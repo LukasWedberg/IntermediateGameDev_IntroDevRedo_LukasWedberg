@@ -1,9 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public class CardGameManager : MonoBehaviour
 {
+    public TMP_Text playerScoreText;
+    public TMP_Text opponentScoreText;
+
+    int playerScore = 0;
+    int opponentScore = 0;
+
+
+
     public enum GameState {
         SETUP,
         OPPONENTDEAL,
@@ -24,6 +34,12 @@ public class CardGameManager : MonoBehaviour
     }
 
     public List<Sprite> cardFaces = new List<Sprite>();
+
+    
+    public List<AudioClip> soundEffects = new List<AudioClip>();
+
+    public static AudioSource myAudioSource;
+
 
     public static GameState state;
 
@@ -63,16 +79,27 @@ public class CardGameManager : MonoBehaviour
 
 
     float reshuffleIncrementTime = .05f; 
-    float reshuffleIncrementTimer = 0f; 
+    float reshuffleIncrementTimer = 0f;
+
+    float newRoundTime = .1f;
+    float newRoundTimer = 0;
+
+    int cardsUndiscarded = 0;
 
 
     void Start() {
         state = GameState.SETUP;
+
+        myAudioSource = GetComponent<AudioSource>();
     }
 
     void Update() 
     {
         Debug.Log(state);
+
+        playerScoreText.text = playerScore.ToString();
+        opponentScoreText.text = opponentScore.ToString();
+
 
         switch (state) {
             case GameState.SETUP:
@@ -149,13 +176,15 @@ public class CardGameManager : MonoBehaviour
                 {
                     opponentSelectTimer = 0;
 
+                    myAudioSource.PlayOneShot(soundEffects[0]);
+
                     int randomIndex = Random.Range(0, 3);
 
                     GameObject randomOpposingCard = opponentHand[randomIndex];
 
                     //randomOpposingCard.transform.position -= new Vector3(0, 1, 0);
 
-                    randomOpposingCard.GetComponent<Card>().positionWeLerpTo = randomOpposingCard.transform.position - new Vector3(0, 1, 0);
+                    randomOpposingCard.GetComponent<Card>().positionWeLerpTo = opponentPos.position + new Vector3(1.3f, -2.1f, 0);//randomOpposingCard.transform.position - new Vector3(0, 1, 0);
 
                     opponentChosenCard = randomOpposingCard;
 
@@ -169,6 +198,7 @@ public class CardGameManager : MonoBehaviour
                 break;
             case GameState.RESOLVE:
 
+
                 if (resolveSuspenseTimer < resolveSuspenseTime)
                 {
                     resolveSuspenseTimer += Time.deltaTime;
@@ -177,19 +207,11 @@ public class CardGameManager : MonoBehaviour
 
                     opponentChosenCard.GetComponent<Card>().flipped = true;
 
-                }else if (postOutcomeRevealTimer < postOutcomeRevealTime)
-                {
-                    postOutcomeRevealTimer += Time.deltaTime;
-                }else
-                {
-                    postOutcomeRevealTimer = 0;
-                    resolveSuspenseTimer = 0;
-
                     Sprite playerCardSprite = playerChosenCard.GetComponent<SpriteRenderer>().sprite;
 
                     Sprite opponentCardSprite = opponentChosenCard.GetComponent<Card>().faceSprite;
 
-                    opponentChosenCard.GetComponent<Card>().flipped = true;
+                    //opponentChosenCard.GetComponent<Card>().flipped = true;
 
                     RoundOutcome outcome = RoundOutcome.DRAW;
 
@@ -262,11 +284,17 @@ public class CardGameManager : MonoBehaviour
                         //Play happy noise
                         //Add player points
 
+                        myAudioSource.PlayOneShot(soundEffects[1]);
+                        playerScore++;
+
                     }
                     else if (outcome == RoundOutcome.LOSS)
                     {
                         //Play sad noise
                         //Add opponent points
+
+                        myAudioSource.PlayOneShot(soundEffects[2]);
+                        opponentScore++;
 
                     }
                     else
@@ -274,6 +302,17 @@ public class CardGameManager : MonoBehaviour
 
                     }
 
+
+                }
+                else if (postOutcomeRevealTimer < postOutcomeRevealTime)
+                {
+                    postOutcomeRevealTimer += Time.deltaTime;
+                }else
+                {
+                    postOutcomeRevealTimer = 0;
+                    resolveSuspenseTimer = 0;
+
+                   
                     state = GameState.CLEANUP;
 
                 }
@@ -349,11 +388,13 @@ public class CardGameManager : MonoBehaviour
                     reshuffleIncrementTimer = 0;
                     if (discardPile.Count > 0)
                     {
+                        myAudioSource.PlayOneShot(soundEffects[0]);
+
                         GameObject cardWeReturn = discardPile[discardPile.Count - 1];
 
                         discardPile.Remove(cardWeReturn);
 
-                        Vector3 newPos =  new Vector3(-discardTransform.position.x, discardTransform.position.y + .02f * DeckManager.deck.Count, 0 - .1f * DeckManager.deck.Count);
+                        Vector3 newPos = new Vector3(-discardTransform.position.x, discardTransform.position.y + .02f * DeckManager.deck.Count, 0 - .1f * DeckManager.deck.Count);
 
                         Card cardComponent = cardWeReturn.GetComponent<Card>();
 
@@ -366,9 +407,33 @@ public class CardGameManager : MonoBehaviour
 
 
 
+
+                    }
+                    else if (DeckManager.deck.Count > cardsUndiscarded)
+                    {
+                        myAudioSource.PlayOneShot(soundEffects[0]);
+
+                        GameObject cardWePlaceInFront = DeckManager.deck[DeckManager.deck.Count - 1];
+
+                        DeckManager.deck.Remove(cardWePlaceInFront);
+
+                        DeckManager.deck.Insert(cardsUndiscarded, cardWePlaceInFront);
+
+                        Vector3 newPos = new Vector3(-discardTransform.position.x, discardTransform.position.y + .02f * cardsUndiscarded, -3 - .1f * cardsUndiscarded);
+
+                        Card cardComponent = cardWePlaceInFront.GetComponent<Card>();
+
+                        cardComponent.positionWeLerpTo = newPos;
+
+                        cardsUndiscarded += 1;
+                    }
+                    else if( Vector3.Distance(DeckManager.deck[DeckManager.deck.Count - 1].transform.position, DeckManager.deck[DeckManager.deck.Count-1].GetComponent<Card>().positionWeLerpTo) < .1 )
+                    {
+                        state = GameState.SETUP;
+                        cardsUndiscarded = 0;                    
                     }
 
-
+                    
                 }
 
                 break;
@@ -376,11 +441,14 @@ public class CardGameManager : MonoBehaviour
         }    
     }
 
-    void DealCard() {        
+    void DealCard() {
+
+        myAudioSource.PlayOneShot(soundEffects[0]);
+
         GameObject nextCard = DeckManager.deck[DeckManager.deck.Count - 1];
         Vector3 newPos = playerPos.transform.position;
         
-        newPos.x = newPos.x + (2f * playerHand.Count);
+        newPos.x = newPos.x + (1.3f * playerHand.Count);
 
         nextCard.GetComponent<Card>().positionWeLerpTo = newPos;
 
@@ -391,9 +459,13 @@ public class CardGameManager : MonoBehaviour
     }
 
     void DealOpponentCard() {
+        //Debug.Log(DeckManager.deck.Count);
+
+        myAudioSource.PlayOneShot(soundEffects[0]);
+
         GameObject nextCard = DeckManager.deck[DeckManager.deck.Count - 1];
         Vector3 newPos = opponentPos.transform.position;
-        newPos.x = newPos.x + (2f * opponentHand.Count);
+        newPos.x = newPos.x + (1.3f * opponentHand.Count);
 
         nextCard.GetComponent<Card>().positionWeLerpTo = newPos;
 
@@ -418,6 +490,9 @@ public class CardGameManager : MonoBehaviour
     }
 
     void DiscardCard(List<GameObject> listWeRemoveFrom, GameObject cardWeRemove) {
+
+        myAudioSource.PlayOneShot(soundEffects[0]);
+
         listWeRemoveFrom.Remove(cardWeRemove);
         Vector3 newPos = discardTransform.position - new Vector3(0, -.02f * discardPile.Count, .1f * discardPile.Count);
 

@@ -129,3 +129,4 @@ MonoBehaviour:
   myRenderer: {fileID: 811653157915242016}
   flipped: 0
   positionWeLerpTo: {x: 0, y: 0, z: 0}
+  cardSwoosh: {fileID: 8300000, guid: 229046ff0f7f296489aeec885d2fd2df, type: 3}
