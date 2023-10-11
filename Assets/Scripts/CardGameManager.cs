@@ -61,7 +61,7 @@ public class CardGameManager : MonoBehaviour
     public GameObject opponentChosenCard;
 
 
-    float cardDealTime = .28f;
+    float cardDealTime = .25f;
     float cardDealTimer = 0;
 
 

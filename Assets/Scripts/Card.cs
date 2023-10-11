@@ -17,7 +17,7 @@ public class Card : MonoBehaviour
 
     public Vector3 positionWeLerpTo;
 
-    float lerpSpeed = 18;
+    float lerpSpeed = 14;
     
     public AudioClip cardSwoosh;
 
